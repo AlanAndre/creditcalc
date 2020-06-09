@@ -1,0 +1,79 @@
+from math import ceil, log, floor
+from sys import argv
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--type", required=True,
+                    type=str, help="annuity or diff")
+parser.add_argument("--p", "--principal", type=int)
+parser.add_argument("--n", "--periods", type=int)
+parser.add_argument("--i", "--interest", type=float)
+parser.add_argument("--a", "--payment", type=float)
+args = parser.parse_args()
+if args.i:
+    args.i /= 1200
+
+
+def diff(p, n, i, m):
+    d = p/n + i * (p - p * (m - 1) / n)
+    return d
+
+
+def annuity(p, n, i):
+    a = p * (i * pow((1 + i), n)) / (pow((1 + i), n) - 1)
+    return ceil(a)
+
+
+def principal(a, i, n):
+    p = a / ((i * pow((1 + i), n)) / (pow((1 + i), n) - 1))
+    return floor(p)
+
+
+def periods(a, i, p):
+    n = ceil(log(a / (a - (i * p)), (1 + i)))
+    return n
+
+
+checklist = [args.p, args.n, args.i, args.a]
+post_checklist = [x for x in checklist if x is not None]
+
+if not all(item >= 0 for item in post_checklist):  # checking if args are negative
+    print('Incorrect parameters')
+
+elif args.type == 'annuity' and len(argv) >= 5 and args.p and args.n and args.i:
+    # monthly payment
+    annuity_pay = annuity(args.p, args.n, args.i)
+    over_payed = annuity_pay * args.n - args.p
+    print(f"""Your annuity payment = {annuity_pay}
+Overpayment = {over_payed}""")
+elif args.type == 'diff' and args.p and len(argv) >= 5:
+    # diff payment
+    sum_dif_pay = 0
+    for m in range(1, args.n + 1):
+        dif_pay = ceil(diff(args.p, args.n, args.i, m))
+        sum_dif_pay += dif_pay
+        print(f'Month {m}: paid out {dif_pay}')
+    over_payed = sum_dif_pay - args.p
+    print(f"""
+Overpayment = {over_payed}""")
+elif args.type == 'annuity' and len(argv) >= 5 and args.a and args.n and args.i:
+    credit_principal = principal(args.a, args.i, args.n)
+    over_payed = ceil(args.a * args.n - credit_principal)
+    print(f"""Your credit principal = {credit_principal}!
+Overpayment = {over_payed}""")
+elif args.type == 'annuity' and len(argv) >= 5 and args.a and args.i and args.i:
+    credit_periods = periods(args.a, args.i, args.p)
+    y = credit_periods // 12
+    m = credit_periods % 12
+    if y != 0 and m != 0:
+        print(f'You need {y} years and {m} months to repay this credit!')
+    elif y == 0:
+        print(f'You need {m} months to repay this credit!')
+    elif y == 1 and m == 0:
+        print('You need 1 year to repay this credit!')
+    elif m == 0:
+        print(f'You need {y} years to repay this credit!')
+    overpayment = ceil(args.a * credit_periods - args.p)
+    print(f'Overpayment = {overpayment}')
+else:
+    print('Incorrect parameters')
